@@ -1,0 +1,74 @@
+# Ignore build outputs
+bin/
+obj/
+artifacts/
+
+# Visual Studio cache/options files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# NuGet
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Dotnet publish
+publish/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets and local configuration
+.env
+.env.*
+appsettings.Development.json
+secrets.json
+
+# Database files (e.g., SQLite)
+*.db
+*.sqlite
+
+# Test result files
+TestResults/
+*.trx
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+
+# Compression/archives
+*.zip
+*.tar.gz
+
+# NPM / Node
+node_modules/
+
+# Other
+pkg/
+coverage/
+
+# Ignore compiled python files if they exist
+__pycache__/
+*.pyc
+
+# Build artifacts
+*.pdb
+**/Debug/
+**/Release/
