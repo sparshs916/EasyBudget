@@ -6,7 +6,7 @@ using EasyBudget.Api.Data;
 using EasyBudget.Api.Models;
 
 [ApiController]
-[Route("api/bankaccount")] // This makes the URL: /api/bankaccount
+[Route("api/[controller]")] 
 public class BankAccountController : ControllerBase
 {
     private readonly ApiDbContext _context;

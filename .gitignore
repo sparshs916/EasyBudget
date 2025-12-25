@@ -39,6 +39,7 @@ Thumbs.db
 .env.*
 appsettings.Development.json
 secrets.json
+*/etc/
 
 # Database files (e.g., SQLite)
 *.db
