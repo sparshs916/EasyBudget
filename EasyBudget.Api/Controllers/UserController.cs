@@ -1,39 +1,57 @@
 namespace EasyBudget.Api.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using EasyBudget.Api.Data;
-using EasyBudget.Api.Models;
+using EasyBudget.Api.DTO;
+using EasyBudget.Api.Services;
 
 [ApiController]
 [Route("api/user")] // This makes the URL: /api/User
 public class UserController : ControllerBase
 {
-    private readonly ApiDbContext _context;
+    private readonly UserService _userService;
 
-    // Dependency Injection: .NET gives us the DB connection automatically
-    public UserController(ApiDbContext context)
+    public UserController(UserService userService)
     {
-        _context = context;
+        _userService = userService;
     }
 
-    // GET: /api/user
+    // GET: /api/user/create ??
     // This returns all transactions in the database
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
-    {
-        // This tells EF Core: "Go to the Users table and return them as a list."
-        return await _context.Users
-            .Include(b => b.Enrollments) // Include related Enrollments
-            .ToListAsync();
-    }
-
     [HttpPost]
-    public async Task<ActionResult<User>> PostUser(User user)
-    {
-        _context.Users.Add(user); // Use the plural name from your DbContext
-        await _context.SaveChangesAsync();
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDto request){
+        // This tells EF Core: "Go to the Users table and return them as a list."
+        bool success = await _userService.CreateNewUserAsync(request);
 
-        return CreatedAtAction(nameof(GetUsers), new { id = user.Guid }, user);
+        if(!success){
+            return BadRequest("Could not create new user");
+        }
+
+        // This likely needs to return a real status code
+        return Ok(new { Message = "User created and accounts synced!" }); 
+
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetUser([FromBody] GetUserRequestDto request){
+        var user = await _userService.GetUserAsync(request);
+        if(user is null){
+            return NotFound("User not found");
+        }
+        return Ok(user);
+    }
+
+    // [HttpGet]
+    // public async Task<IActionResult> GetUser([FromBody] CreateUserRequestDto request){
+    //     // This tells EF Core: "Go to the Users table and return them as a list."
+    //     bool success = await _userService.CreateNewUser(request);
+
+    //     if(!success){
+    //         return BadRequest("Could not create new user")
+    //     }
+
+    //     // This likely needs to return a real status code
+    //     return Ok(new { Message = "User created and accounts synced!" }); 
+
+    // }
+
 }

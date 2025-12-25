@@ -5,6 +5,7 @@ artifacts/
 
 # Visual Studio cache/options files
 .vs/
+.vscode/
 *.user
 *.suo
 *.userosscache
