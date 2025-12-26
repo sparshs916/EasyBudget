@@ -40,17 +40,17 @@ public class BankAccount
     public string Subtype { get; set; } = string.Empty;
 
     [Required]
-    public string Currency { get; set; } = string.Empty; // ISO 4217 code (e.g., "USD")
+    public string Currency { get; set; } = string.Empty;
 
     [Required]
     public string LastFour { get; set; } = string.Empty;
 
     [Required]
-    public string Status { get; set; } = string.Empty; // open or closed
+    public string Status { get; set; } = string.Empty;
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // One "BankAccount" can has many "Transactions", "Balances", etc.
+    // One "BankAccount" has many "Transactions", "Balances", etc.
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
     public ICollection<Balance> Balances { get; set; } = new List<Balance>();
 

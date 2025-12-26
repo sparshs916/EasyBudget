@@ -19,12 +19,14 @@ public class Enrollment
     [ForeignKey("UserGuid")]
     public User ? User { get; set; }
 
+    // TELLER DATA
     [Required]
     public string EnrollmentId { get; set; } = string.Empty;
 
+    //Set on successful enrollment
     [Required]
     public string UserId { get; set; } = string.Empty;
-
+    // Teller webhook for status
     [Required]
     public string Status { get; set; } = string.Empty;
     // TODO: Encrypt this field

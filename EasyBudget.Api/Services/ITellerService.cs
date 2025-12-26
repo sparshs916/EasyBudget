@@ -4,5 +4,5 @@ using EasyBudget.Api.DTO;
 
 public interface ITellerService
 {
-    // Task<BankAccountDto[]> GetUserBankAccountsAsync(string token, CancellationToken cancellationToken = default);
+    Task<BankAccountDto[]> GetUserBankAccountsAsync(string token, CancellationToken cancellationToken = default);
 }

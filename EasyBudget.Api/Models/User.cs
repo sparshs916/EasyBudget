@@ -3,20 +3,19 @@ using System.ComponentModel.DataAnnotations;
 namespace EasyBudget.Api.Models;
 
 public class User
-{   
+{
     [Key]
     public Guid Guid { get; set; } = Guid.NewGuid();
 
     [Required]
-    [MaxLength(32)]
+    [MaxLength(256)]
     public string Username { get; set; } = string.Empty;
 
-    [Required]
-    [MaxLength(50)]
-    public string Auth0Id { get; set; } = string.Empty;
+    [MaxLength(128)]
+    public string? Auth0Id { get; set; } = string.Empty;
 
     [Required]
-    [MaxLength(100)]
+    [MaxLength(512)]
     public string Email { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
