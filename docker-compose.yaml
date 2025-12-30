@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: easybudget_db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  backend:
+    build: 
+      context: ./EasyBudget.Api
+      dockerfile: Dockerfile
+    container_name: easy-budget-backend
+    env_file:
+      - .env
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - TELLER_BASE_URL=${TELLER_BASE_URL}
+      - REDIS_HOST=redis
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5050:8080"
+    volumes:
+      - dataprotection_keys:/root/.aspnet/DataProtection-Keys
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build: ./easy-budget-web
+    container_name: easy-budget-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - PUBLIC_API_URL=http://localhost:5000
+  redis:
+    image: redis:8.4-alpine
+    container_name: easybudget_redis
+    ports:
+      - "6379:6379"
+volumes:
+  postgres_data:
+  dataprotection_keys:

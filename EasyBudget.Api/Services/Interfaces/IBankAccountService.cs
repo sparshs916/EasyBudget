@@ -1,9 +1,14 @@
 namespace EasyBudget.Api.Services.Interfaces;
 
 using EasyBudget.Api.DTO;
-using EasyBudget.Api.Models;
+
 
 public interface IBankAccountService
 {
-    Task<BankAccountDto[]> GetBankAccountsAsync(string enrollmentId, string auth0Id);
+    Task<BankAccountDto[]>
+    CreateBankAccountAsync(string accessToken, string auth0Id,
+    CancellationToken cancellationToken = default);
+    Task<BankAccountDto[]>
+    GetBankAccountsAsync(string enrollmentId,
+        string auth0Id, CancellationToken cancellationToken = default);
 }

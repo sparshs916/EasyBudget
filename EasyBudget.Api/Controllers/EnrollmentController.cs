@@ -4,31 +4,56 @@ using Microsoft.AspNetCore.Mvc;
 using EasyBudget.Api.DTO;
 using EasyBudget.Api.Services;
 using System.Security.Claims;
+using EasyBudget.Api.Services.Cache;
+using EasyBudget.Api.Services.Interfaces;
 
 [ApiController]
 [Route("api/enrollment")]
 public class EnrollmentController(
-    EnrollmentService enrollmentService
+    IEnrollmentService enrollmentService,
+    IRedisCacheService redisCacheService,
+    ILogger<EnrollmentController> logger
 ) : ControllerBase
 {
+
     [HttpPost]
     public async Task<IActionResult> CreateEnrollment([FromBody] CreateEnrollmentDto dto)
     {
         var auth0Id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
         if (string.IsNullOrEmpty(auth0Id))
         {
-            return Unauthorized("Could not determine user identity");
+            logger.LogWarning("Unauthorized access attempt to CreateEnrollment");
+            return Unauthorized();
+        }
+
+        // Frontend will send enrollment ID and we will idempotently create enrollment
+        var cacheKey = redisCacheService.createCacheKey("enrollment_creation", dto.EnrollmentId);
+        var existingResponse = await redisCacheService.GetCacheKeyAsync<object>(cacheKey);
+
+        if (existingResponse != null)
+        {
+            logger.LogInformation("Idempotent enrollment creation detected for EnrollmentId: {EnrollmentId}",
+             dto.EnrollmentId);
+            return Ok(existingResponse);
         }
 
         bool success = await enrollmentService.CreateEnrollmentAsync(auth0Id, dto);
-
         if (!success)
         {
             return BadRequest("Could not create new enrollment");
         }
 
-        return Ok(new { Message = $"Enrollment created for {dto.InstitutionName}", dto.InstitutionName });
+        var successResponse = new
+        {
+            Message = $"Enrollment created for {dto.InstitutionName}",
+            dto.InstitutionName
+        };
+
+        int twentyFourHoursInMinutes = 24 * 60;
+        await redisCacheService.SetCacheKeyAsync(cacheKey, successResponse, 
+            TimeSpan.FromHours(twentyFourHoursInMinutes));
+
+        return Ok(successResponse);
     }
 
     [HttpGet("{enrollmentId}")]
@@ -71,6 +96,6 @@ public class EnrollmentController(
         return Ok(enrollments);
     }
 
-    
+
 
 }

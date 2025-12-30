@@ -12,21 +12,27 @@ public sealed class TellerService(
     ILogger<TellerService> logger)
     : ITellerService
 {
-    public async Task<BankAccountDto[]> GetUserBankAccountsAsync(string AccessToken, 
+    private readonly string accountsURI = "accounts";
+    public async Task<BankAccountDto[]> FetchBankAccountsAsync(string AccessToken,
         CancellationToken cancellationToken = default)
     {
         try
         {
             var client = httpClientFactory.CreateClient("Teller");
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", 
-                AccessToken);
+            // Teller uses Basic Auth: access_token as username, empty password
+            var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{AccessToken}:"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             var bankAccounts = await client.GetFromJsonAsync<BankAccountDto[]>(
-                "bank-accounts",
+                accountsURI,
                 cancellationToken: cancellationToken
             );
-            
-            logger.LogInformation("Fetched {Count} bank accounts from Teller API.", bankAccounts?.Length ?? 0);
+
+            logger.LogInformation("bank account data: {BankAccounts}", 
+                JsonSerializer.Serialize(bankAccounts));
+
+            logger.LogInformation("Fetched {Count} bank accounts from Teller API.",
+             bankAccounts?.Length ?? 0);
             return bankAccounts ?? Array.Empty<BankAccountDto>();
         }
         catch (Exception ex)

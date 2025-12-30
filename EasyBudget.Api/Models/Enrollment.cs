@@ -37,7 +37,7 @@ public class Enrollment
 
     public string ? InstitutionId { get; set; } = string.Empty;
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastSyncedAt { get; set; } = DateTime.UtcNow;
     
     // One "Enrollment" can have many "BankAccounts"
     public ICollection<BankAccount> Accounts { get; set; } = new List<BankAccount>();

@@ -12,10 +12,17 @@ public sealed class EnrollmentService(
     ApiDbContext context,
     ILogger<EnrollmentService> logger) : IEnrollmentService
 {
-    public async Task<bool> CreateEnrollmentAsync(string auth0Id, CreateEnrollmentDto dto)
+    public async Task<bool> CreateEnrollmentAsync(string auth0Id, CreateEnrollmentDto dto, 
+    CancellationToken cancellationToken = default)
     {
         try
         {
+            if(dto == null)
+            {
+                logger.LogError("CreateEnrollmentAsync: dto is null");
+                return false;
+            }
+
             User? user = await context.Users
                 .FirstOrDefaultAsync(u => u.Auth0Id == auth0Id);
 
@@ -23,6 +30,16 @@ public sealed class EnrollmentService(
             {
                 logger.LogError("No User found with Auth0Id");
                 return false;
+            }
+
+            var existingEnrollments = await context.Enrollments
+                .Where(e => e.EnrollmentId == dto.EnrollmentId)
+                .ToListAsync(cancellationToken);
+                
+            if (existingEnrollments.Count > 0)
+            {
+                logger.LogInformation("Enrollment with EnrollmentId {EnrollmentId} already exists. Skipping creation.", dto.EnrollmentId);
+                return true;
             }
 
             Enrollment enrollment = new Enrollment
@@ -54,23 +71,49 @@ public sealed class EnrollmentService(
     {
         try
         {
-            Enrollment? enrollment = await context.Enrollments
+            Enrollment ? enrollment = await context.Enrollments
                 .Include(e => e.User)
-                .FirstOrDefaultAsync(e =>
-                    e.EnrollmentId == enrollmentId && e.User != null && e.User.Auth0Id == auth0Id);
+                .FirstOrDefaultAsync(e => e.EnrollmentId == enrollmentId &&
+                            e.User != null &&
+                            e.User.Auth0Id == auth0Id);
 
             if (enrollment is null)
             {
-                logger.LogError("No Enrollment found with EnrollmentId {EnrollmentId}", enrollmentId);
+                logger.LogError("No enrollment found for enrollment {EnrollmentId}", enrollmentId);
                 return null;
             }
 
-            logger.LogInformation("GET Enrollment: Found enrollment for user {Username}", enrollment.User?.Username);
+            logger.LogInformation("GET Enrollment: Found enrollment {EnrollmentId}", enrollmentId);
             return enrollment;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error occurred on GET Enrollment {exception}", ex.Message);
+            logger.LogError(ex, "Error occurred while getting enrollment {exception}", ex.Message);
+            return null;
+        }
+    }
+
+    public async Task<IEnumerable<Enrollment>?> GetAllEnrollmentsAsync(string auth0Id)
+    {
+        try
+        {
+            var enrollments = await context.Enrollments
+                .Include(e => e.User)
+                .Where(e => e.User != null && e.User.Auth0Id == auth0Id)
+                .ToListAsync();
+
+            if (enrollments is null || enrollments.Count == 0)
+            {
+                logger.LogInformation("No enrollments found for user");
+                return null;
+            }
+
+            logger.LogInformation("GET All Enrollments: Found {Count} enrollments", enrollments.Count);
+            return enrollments;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error occurred while getting all enrollments {exception}", ex.Message);
             return null;
         }
     }
@@ -98,31 +141,6 @@ public sealed class EnrollmentService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred while getting enrollments {exception}", ex.Message);
-            return null;
-        }
-    }
-
-    public async Task<IEnumerable<Enrollment>?> GetAllEnrollmentsAsync(string auth0Id)
-    {
-        try
-        {
-            var enrollments = await context.Enrollments
-                .Include(e => e.User)
-                .Where(e => e.User != null && e.User.Auth0Id == auth0Id)
-                .ToListAsync();
-
-            if (enrollments is null || enrollments.Count == 0)
-            {
-                logger.LogInformation("No enrollments found for user");
-                return null;
-            }
-
-            logger.LogInformation("GET All Enrollments: Found {Count} enrollments", enrollments.Count);
-            return enrollments;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error occurred while getting all enrollments {exception}", ex.Message);
             return null;
         }
     }

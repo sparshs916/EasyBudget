@@ -4,11 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using EasyBudget.Api.DTO;
 using EasyBudget.Api.Services;
 using System.Security.Claims;
+using EasyBudget.Api.Services.Interfaces;
 
 [ApiController]
 [Route("api/user")]
 public class UserController(
-    UserService userService
+    IUserService userService
 ) : ControllerBase
 {
     [HttpPost]
@@ -28,7 +29,7 @@ public class UserController(
             return BadRequest("Could not create new user");
         }
 
-        return Ok(new { Message = "User created and accounts synced!" });
+        return Ok(new { Message = "User created!" });
     }
 
     [HttpGet]

@@ -1,8 +1,9 @@
-namespace EasyBudget.Api.Services.Interfaces;
+namespace EasyBudget.Api.Services;
 
 using EasyBudget.Api.DTO;
 
 public interface ITellerService
 {
-    Task<BankAccountDto[]> GetEnrollment(string AccessToken, CancellationToken cancellationToken = default);
+    Task<BankAccountDto[]> FetchBankAccountsAsync(string AccessToken,
+            CancellationToken cancellationToken = default);
 }

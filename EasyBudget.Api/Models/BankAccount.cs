@@ -48,7 +48,7 @@ public class BankAccount
     [Required]
     public string Status { get; set; } = string.Empty;
     
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime LastSyncedAt { get; set; } = DateTime.UtcNow;
 
     // One "BankAccount" has many "Transactions", "Balances", etc.
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
