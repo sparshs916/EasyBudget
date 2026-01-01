@@ -14,13 +14,15 @@ public class BankAccountService(
 ) : IBankAccountService
 {
 
-    public async Task<BankAccountDto[]> 
+    public async Task<BankAccountDto[]>
     CreateBankAccountAsync(string accessToken,
-    string auth0Id, CancellationToken cancellationToken = default) {
+    string auth0Id, CancellationToken cancellationToken = default)
+    {
         try
         {
+            // Get all bank accounts for the enrollment 
             BankAccountDto[]? bankAccounts = await
-                tellerService.FetchBankAccountsAsync(accessToken, cancellationToken);
+                tellerService.FetchAllBankAccountsAsync(accessToken, cancellationToken);
 
             if (bankAccounts is null || bankAccounts.Length == 0)
             {
@@ -28,10 +30,11 @@ public class BankAccountService(
                 return bankAccounts ?? Array.Empty<BankAccountDto>();
             }
 
+            // Check if bank accounts already exist in the database
             var existingAccounts = await context.BankAccounts
                 .Where(b => bankAccounts.Select(ba => ba.EnrollmentId).Contains(b.EnrollmentId))
                 .ToListAsync(cancellationToken);
-            
+
             if (existingAccounts.Count > 0)
             {
                 logger.LogInformation("Some bank accounts already exist in the database. Skipping creation for those accounts.");
@@ -48,22 +51,23 @@ public class BankAccountService(
                         ba.Status
                     ))
                     .ToArray();
-                
+
                 return existingAccountDtos;
             }
 
             foreach (var bankAccountDto in bankAccounts)
-            {   var enrollment = await context.Enrollments
+            {
+                var enrollment = await context.Enrollments
                     .Include(e => e.User)
-                    .FirstOrDefaultAsync(e => 
+                    .FirstOrDefaultAsync(e =>
                         e.EnrollmentId == bankAccountDto.EnrollmentId &&
-                        e.User != null && 
-                        e.User.Auth0Id == auth0Id, 
+                        e.User != null &&
+                        e.User.Auth0Id == auth0Id,
                         cancellationToken);
 
                 if (enrollment is null)
                 {
-                    logger.LogWarning("No enrollment found for EnrollmentId {EnrollmentId}", 
+                    logger.LogWarning("No enrollment found for EnrollmentId {EnrollmentId}",
                         bankAccountDto.EnrollmentId);
                     continue;
                 }
@@ -74,7 +78,7 @@ public class BankAccountService(
                     AccountName = bankAccountDto.AccountName,
                     Currency = bankAccountDto.Currency,
                     EnrollmentId = bankAccountDto.EnrollmentId,
-                    EnrollmentGuid = enrollment.Guid, 
+                    EnrollmentGuid = enrollment.Guid,
                     InstitutionId = bankAccountDto.Institution.Id,
                     InstitutionName = bankAccountDto.Institution.Name,
                     LastFour = bankAccountDto.LastFour,
@@ -96,10 +100,10 @@ public class BankAccountService(
         }
     }
 
-    public async Task<BankAccountDto[]> 
-    GetBankAccountsAsync(string EnrollmentId, 
+    public async Task<BankAccountDto[]>
+    GetBankAccountsbyIdAsync(string EnrollmentId,
         string auth0Id, CancellationToken cancellationToken = default)
-    {   
+    {
         var user = await context.Users
             .Where(u => u.Auth0Id == auth0Id)
             .FirstOrDefaultAsync(cancellationToken);
@@ -115,7 +119,8 @@ public class BankAccountService(
             .ToListAsync(cancellationToken);
 
         var bankAccountDtoList = new List<BankAccountDto>();
-        foreach(var bankAccount in bankAccountsList){
+        foreach (var bankAccount in bankAccountsList)
+        {
             var bankAccountDto = new BankAccountDto(
                 bankAccount.AccountId,
                 bankAccount.AccountName,
@@ -136,5 +141,46 @@ public class BankAccountService(
             return Array.Empty<BankAccountDto>();
         }
         return bankAccountDtoList.ToArray();
+    }
+
+    public async Task<BankAccountDto[]>
+    GetBankAccountsAsync(string auth0Id, CancellationToken cancellationToken = default)
+    {
+        var user = await context.Users
+            .Where(u => u.Auth0Id == auth0Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (user is null)
+        {
+            logger.LogWarning("No user found with Auth0Id {Auth0Id}", auth0Id);
+            return Array.Empty<BankAccountDto>();
+        }
+
+        var bankAccountsList = await context.BankAccounts
+            .ToListAsync(cancellationToken);
+
+        if (bankAccountsList.Count == 0)
+        {
+            logger.LogWarning("No bank accounts found");
+            return Array.Empty<BankAccountDto>();
+        }
+
+        var bankAccountsDto = new List<BankAccountDto>();
+        foreach (var bankAccount in bankAccountsList)
+        {
+            var bankAccountDto = new BankAccountDto(
+                bankAccount.AccountId,
+                bankAccount.AccountName,
+                bankAccount.Currency,
+                bankAccount.EnrollmentId,
+                new InstitutionDto(bankAccount.InstitutionId, bankAccount.InstitutionName),
+                bankAccount.LastFour,
+                bankAccount.Subtype,
+                bankAccount.Type,
+                bankAccount.Status
+            );
+            bankAccountsDto.Add(bankAccountDto);
+        }
+        return bankAccountsDto.ToArray();
     }
 }

@@ -4,6 +4,9 @@ using EasyBudget.Api.DTO;
 
 public interface ITellerService
 {
-    Task<BankAccountDto[]> FetchBankAccountsAsync(string AccessToken,
+    Task<BankAccountDto[]> FetchAllBankAccountsAsync(string AccessToken,
             CancellationToken cancellationToken = default);
+
+    Task<TransactionDto[]> FetchAllTransactionsAsync(string accessToken, string accountId,
+            CancellationToken cancellationToken = default); 
 }

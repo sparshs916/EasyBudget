@@ -44,6 +44,21 @@ ArgumentException.ThrowIfNullOrEmpty(auth0Domain, "AUTH0_DOMAIN environment vari
 var auth0Audience = Environment.GetEnvironmentVariable("AUTH0_AUDIENCE");
 ArgumentException.ThrowIfNullOrEmpty(auth0Audience, "AUTH0_AUDIENCE environment variable is not set");
 
+// Configure CORS for frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+                "http://localhost:3000",  // Next.js dev server
+                "http://localhost:3001"   // Alternate port
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -98,6 +113,7 @@ builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddScoped<IRedisCacheService, RedisCacheService>();
+builder.Services.AddScoped<INonceService, NonceService>();
 builder.Services.AddScoped<ITellerService, TellerService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
@@ -139,6 +155,7 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while migrating the database.");
     }
 }
+app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseExceptionHandler();

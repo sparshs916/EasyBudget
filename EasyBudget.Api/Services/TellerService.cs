@@ -12,8 +12,8 @@ public sealed class TellerService(
     ILogger<TellerService> logger)
     : ITellerService
 {
-    private readonly string accountsURI = "accounts";
-    public async Task<BankAccountDto[]> FetchBankAccountsAsync(string AccessToken,
+
+    public async Task<BankAccountDto[]> FetchAllBankAccountsAsync(string AccessToken,
         CancellationToken cancellationToken = default)
     {
         try
@@ -24,11 +24,11 @@ public sealed class TellerService(
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
 
             var bankAccounts = await client.GetFromJsonAsync<BankAccountDto[]>(
-                accountsURI,
+                "accounts",
                 cancellationToken: cancellationToken
             );
 
-            logger.LogInformation("bank account data: {BankAccounts}", 
+            logger.LogInformation("bank account data: {BankAccounts}",
                 JsonSerializer.Serialize(bankAccounts));
 
             logger.LogInformation("Fetched {Count} bank accounts from Teller API.",
@@ -41,5 +41,36 @@ public sealed class TellerService(
             return Array.Empty<BankAccountDto>();
         }
     }
+
+    public async Task<TransactionDto[]> FetchAllTransactionsAsync(string accessToken, string accountId,
+            CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var client = httpClientFactory.CreateClient("Teller");
+
+            var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{accessToken}:"));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+
+            var transactions = await client.GetFromJsonAsync<TransactionDto[]>(
+                $"accounts/{accountId}/transactions",
+                cancellationToken: cancellationToken
+            );
+
+            logger.LogInformation("transaction data: {Transactions}",
+                JsonSerializer.Serialize(transactions));
+
+            logger.LogInformation("Fetched {Count} transactions from Teller API.",
+             transactions?.Length ?? 0);
+            return transactions ?? Array.Empty<TransactionDto>();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching transactions from Teller API.");
+            return Array.Empty<TransactionDto>();
+        }
+    }
+
+    
 
 }

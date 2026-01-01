@@ -12,12 +12,12 @@ public sealed class EnrollmentService(
     ApiDbContext context,
     ILogger<EnrollmentService> logger) : IEnrollmentService
 {
-    public async Task<bool> CreateEnrollmentAsync(string auth0Id, CreateEnrollmentDto dto, 
+    public async Task<bool> CreateEnrollmentAsync(string auth0Id, CreateEnrollmentDto dto,
     CancellationToken cancellationToken = default)
     {
         try
         {
-            if(dto == null)
+            if (dto == null)
             {
                 logger.LogError("CreateEnrollmentAsync: dto is null");
                 return false;
@@ -35,7 +35,7 @@ public sealed class EnrollmentService(
             var existingEnrollments = await context.Enrollments
                 .Where(e => e.EnrollmentId == dto.EnrollmentId)
                 .ToListAsync(cancellationToken);
-                
+
             if (existingEnrollments.Count > 0)
             {
                 logger.LogInformation("Enrollment with EnrollmentId {EnrollmentId} already exists. Skipping creation.", dto.EnrollmentId);
@@ -71,7 +71,7 @@ public sealed class EnrollmentService(
     {
         try
         {
-            Enrollment ? enrollment = await context.Enrollments
+            Enrollment? enrollment = await context.Enrollments
                 .Include(e => e.User)
                 .FirstOrDefaultAsync(e => e.EnrollmentId == enrollmentId &&
                             e.User != null &&
@@ -141,6 +141,35 @@ public sealed class EnrollmentService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error occurred while getting enrollments {exception}", ex.Message);
+            return null;
+        }
+    }
+
+    public async Task<string?> GetAccessTokenForAccountAsync(string accountId, string auth0Id)
+    {
+        try
+        {
+            // Find the bank account and its associated enrollment
+            var bankAccount = await context.BankAccounts
+                .Include(ba => ba.Enrollment)
+                    .ThenInclude(e => e!.User)
+                .FirstOrDefaultAsync(ba => ba.AccountId == accountId &&
+                                          ba.Enrollment != null &&
+                                          ba.Enrollment.User != null &&
+                                          ba.Enrollment.User.Auth0Id == auth0Id);
+
+            if (bankAccount?.Enrollment is null)
+            {
+                logger.LogWarning("No enrollment found for account {AccountId}", accountId);
+                return null;
+            }
+
+            logger.LogDebug("Found access token for account {AccountId}", accountId);
+            return bankAccount.Enrollment.AccessToken;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting access token for account {AccountId}", accountId);
             return null;
         }
     }

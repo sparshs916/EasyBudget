@@ -62,4 +62,18 @@ public class RedisCacheService : IRedisCacheService
             throw; // Re-throw so callers know Redis failed
         }
     }
+
+    public async Task RemoveCacheKeyAsync(string key)
+    {
+        try
+        {
+            await _cache.RemoveAsync(key);
+            _logger.LogInformation("Successfully removed cache key: {Key}", key);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove cache key: {Key}", key);
+            throw;
+        }
+    }
 }

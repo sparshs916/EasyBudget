@@ -1,4 +1,5 @@
 namespace EasyBudget.Api.DTO;
+
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.InteropServices;
 
@@ -9,7 +10,12 @@ public record CreateEnrollmentDto(
     string UserId,
     string EnrollmentId,
     string InstitutionId,
-    string InstitutionName
-    // TODO: add signature?
+    string InstitutionName,
+    string[] Signatures,
+    string Environment = "sandbox"
+);
+
+public record NonceResponseDto(
+    string Nonce
 );
 

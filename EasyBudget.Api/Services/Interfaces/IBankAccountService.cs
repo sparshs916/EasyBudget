@@ -9,6 +9,10 @@ public interface IBankAccountService
     CreateBankAccountAsync(string accessToken, string auth0Id,
     CancellationToken cancellationToken = default);
     Task<BankAccountDto[]>
-    GetBankAccountsAsync(string enrollmentId,
+    GetBankAccountsbyIdAsync(string enrollmentId,
         string auth0Id, CancellationToken cancellationToken = default);
+
+    Task<BankAccountDto[]>
+    GetBankAccountsAsync(string auth0Id, CancellationToken cancellationToken = default);
+
 }

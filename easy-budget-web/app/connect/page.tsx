@@ -9,32 +9,142 @@ declare global {
   }
 }
 
+interface TellerEnrollment {
+  accessToken: string;
+  user: {
+    id: string;
+  };
+  enrollment: {
+    id: string;
+    institution: {
+      name: string;
+    };
+  };
+  signatures: string[];
+}
+
 export default function Connect() {
   const [teller, setTeller] = useState<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [nonce, setNonce] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  
+  const accessToken = process.env.NEXT_PUBLIC_AUTH0_TEST_TOKEN;
+  // Fetch nonce from backend before initializing Teller
+  const fetchNonce = async (): Promise<string | null> => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/enrollment/nonce`,
+        {
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            // Add your Auth0 token here
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
-  const initializeTeller = () => {
-    if (window.TellerConnect) {
-      const appId = process.env.NEXT_PUBLIC_TELLER_APP_ID;
-
-      if (!appId) {
-        console.error(
-          "Teller Application ID missing: set NEXT_PUBLIC_TELLER_APP_ID in .env.local and restart dev server"
-        );
-        return;
+      if (!res.ok) {
+        throw new Error("Failed to fetch nonce");
       }
-      const setup = window.TellerConnect.setup({
-        applicationId: appId,
-        products: ["verify", "transactions", "balance"],
-        environment : "sandbox",
-        onInit: () => console.log("Teller initialized"),
-        onSuccess: (enrollment: any) => {
-          console.log("Enrollment Success!", enrollment.accessToken);
-        },
-        onExit: () => console.log("User closed Teller Connect"),
-      });
-      setTeller(setup);
-      setIsLoaded(true);
+
+      const data = await res.json();
+      setNonce(data.nonce);
+      return data.nonce;
+    } catch (err) {
+      console.error("Error fetching nonce:", err);
+      setError("Failed to initialize secure connection. Please try again.");
+      return null;
+    }
+  };
+
+  const initializeTeller = async () => {
+    if (!window.TellerConnect) return;
+
+    const appId = process.env.NEXT_PUBLIC_TELLER_APP_ID;
+    if (!appId) {
+      console.error(
+        "Teller Application ID missing: set NEXT_PUBLIC_TELLER_APP_ID in .env.local and restart dev server"
+      );
+      return;
+    }
+
+    // Fetch nonce from backend
+    const currentNonce = await fetchNonce();
+    if (!currentNonce) return;
+
+    const setup = window.TellerConnect.setup({
+      applicationId: appId,
+      products: ["verify", "transactions", "balance"],
+      environment: "sandbox",
+      nonce: currentNonce, // Pass nonce for signature verification
+      onInit: () => console.log("Teller initialized"),
+      onSuccess: async (enrollment: TellerEnrollment) => {
+        console.log("Enrollment Success!", enrollment);
+        setIsConnecting(true);
+        setError(null);
+
+        try {
+          // Send enrollment to backend with signatures for verification
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/enrollment`,
+            {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({
+                accessToken: enrollment.accessToken,
+                userId: enrollment.user.id,
+                enrollmentId: enrollment.enrollment.id,
+                institutionId: "", // Teller doesn't provide this in the enrollment object
+                institutionName: enrollment.enrollment.institution.name,
+                signatures: enrollment.signatures,
+                environment: "sandbox",
+              }),
+            }
+          );
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Failed to create enrollment");
+          }
+
+          const data = await res.json();
+          console.log("Enrollment created:", data);
+          // Redirect to dashboard or next step
+          // window.location.href = "/dashboard";
+        } catch (err: any) {
+          console.error("Error creating enrollment:", err);
+          setError(
+            err.message || "Failed to connect bank account. Please try again."
+          );
+        } finally {
+          setIsConnecting(false);
+        }
+      },
+      onExit: () => {
+        console.log("User closed Teller Connect");
+        // Refresh nonce for next attempt
+        fetchNonce();
+      },
+    });
+
+    setTeller(setup);
+    setIsLoaded(true);
+  };
+
+  const handleConnect = async () => {
+    if (!teller) return;
+
+    // Refresh nonce before opening (in case previous one expired)
+    const freshNonce = await fetchNonce();
+    if (freshNonce) {
+      teller.open();
     }
   };
 
@@ -55,18 +165,28 @@ export default function Connect() {
           budget.
         </p>
 
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
         {/* 2. The Interaction Button */}
         <button
-          onClick={() => teller?.open()}
-          disabled={!isLoaded}
+          onClick={handleConnect}
+          disabled={!isLoaded || isConnecting}
           className={`px-8 py-4 rounded-full font-bold text-white transition-all 
             ${
-              isLoaded
+              isLoaded && !isConnecting
                 ? "bg-blue-600 hover:bg-blue-700 shadow-md active:scale-95"
                 : "bg-gray-400 cursor-not-allowed"
             }`}
         >
-          {isLoaded ? "Connect Bank Account" : "Loading Teller..."}
+          {isConnecting
+            ? "Connecting..."
+            : isLoaded
+            ? "Connect Bank Account"
+            : "Loading Teller..."}
         </button>
       </div>
     </main>

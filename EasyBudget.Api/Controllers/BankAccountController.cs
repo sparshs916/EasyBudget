@@ -34,7 +34,7 @@ public class BankAccountController(
             return BadRequest("Access token is required");
         }
 
-        string cache_key = 
+        string cache_key =
             redisCacheService.createCacheKey("bank_account_creation", accessToken);
 
         var cachedAccounts =
@@ -42,8 +42,15 @@ public class BankAccountController(
 
         if (cachedAccounts != null)
         {
-            return Ok(new { Message = "Bank accounts retrieved from cache", 
-                Accounts = cachedAccounts });
+            return Ok(new
+            {
+                Message = "Bank accounts retrieved from cache",
+                Accounts = cachedAccounts
+            });
+
+
+
+        
         }
 
         // Fetch and create bank accounts
@@ -58,7 +65,7 @@ public class BankAccountController(
         // Cache for 24 hours
         int twentyFourHoursInMinutes = 24 * 60;
         await redisCacheService.SetCacheKeyAsync(cache_key,
-            new { SyncedAt = DateTime.UtcNow }, 
+            new { SyncedAt = DateTime.UtcNow },
             TimeSpan.FromMinutes(twentyFourHoursInMinutes));
 
         return Ok(new { Message = "Bank accounts created successfully!" });
@@ -75,7 +82,7 @@ public class BankAccountController(
         }
 
         var bankAccounts =
-        await bankAccountService.GetBankAccountsAsync(enrollmentId, auth0Id);
+        await bankAccountService.GetBankAccountsbyIdAsync(enrollmentId, auth0Id);
 
         if (bankAccounts is null || bankAccounts.Length == 0)
         {
