@@ -45,7 +45,7 @@ public sealed class TellerService(
     public async Task<TransactionDto[]> FetchAllTransactionsAsync(string accessToken, string accountId,
             CancellationToken cancellationToken = default)
     {
-        try
+        try 
         {
             var client = httpClientFactory.CreateClient("Teller");
 

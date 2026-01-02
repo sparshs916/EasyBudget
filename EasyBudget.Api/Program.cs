@@ -30,7 +30,8 @@ else
 }
 
 var dbName = Environment.GetEnvironmentVariable("DATABASE_NAME");
-ArgumentException.ThrowIfNullOrEmpty(dbName, "DATABASE_NAME environment variable is not set");
+ArgumentException.ThrowIfNullOrEmpty(dbName,
+"DATABASE_NAME environment variable is not set");
 var dbUser = Environment.GetEnvironmentVariable("DATABASE_USER");
 ArgumentException.ThrowIfNullOrEmpty(dbUser, "DATABASE_USER environment variable is not set");
 var dbPass = Environment.GetEnvironmentVariable("DATABASE_PASSWORD");
@@ -100,13 +101,13 @@ builder.Services.AddStackExchangeRedisCache(redisOptions =>
 builder.Services.AddLogging();
 
 var tellerBaseUrl = Environment.GetEnvironmentVariable("TELLER_BASE_URL");
-ArgumentException.ThrowIfNullOrEmpty(tellerBaseUrl, "TELLER_API_BASE_URL environment variable is not set");
+ArgumentException.ThrowIfNullOrEmpty(tellerBaseUrl,
+"TELLER_API_BASE_URL environment variable is not set");
 builder.Services.AddHttpClient("Teller", client =>
 {
     client.BaseAddress = new Uri(tellerBaseUrl);
     client.DefaultRequestHeaders.UserAgent.ParseAdd("easy-budget");
 });
-
 
 // Make sure certain handlers are registered in the desired order
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
@@ -119,6 +120,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
 builder.Services.AddScoped<IBankAccountService, BankAccountService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IWebhookService, WebhookService>();
 
 
 builder.Services.AddControllers(options =>
@@ -128,6 +130,7 @@ builder.Services.AddControllers(options =>
         .Build();
     options.Filters.Add(new AuthorizeFilter(policy));
 });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 var app = builder.Build();

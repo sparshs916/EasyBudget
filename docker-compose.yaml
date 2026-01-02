@@ -17,6 +17,10 @@ services:
     build: 
       context: ./EasyBudget.Api
       dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: rebuild
+          path: ./EasyBudget.Api
     container_name: easy-budget-backend
     env_file:
       - .env
@@ -34,7 +38,6 @@ services:
     ports:
       - "5050:8080"
     volumes:
-      - ./EasyBudget.Api:/src
       - dataprotection_keys:/root/.aspnet/DataProtection-Keys
     depends_on:
       - db
@@ -43,12 +46,24 @@ services:
   frontend:
     build: 
       context: ./easy-budget-web
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
+    develop:
+      watch:
+        - action: sync
+          path: ./easy-budget-web
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+        - action: rebuild
+          path: ./easy-budget-web/package.json
     container_name: easy-budget-frontend
     ports:
       - "3000:3000"
     environment:
       - PUBLIC_API_URL=http://localhost:5000
+      - WATCHPACK_POLLING=true
+
   redis:
     image: redis:8.4-alpine
     container_name: easybudget_redis
