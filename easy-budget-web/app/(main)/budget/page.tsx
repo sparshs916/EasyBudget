@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import BudgetSection from '../budget/components/BudgetSection';
+import BudgetSection from './components/BudgetSection';
 
 const incomeData = [
   { name: 'Fixed', value: 2000, color: '#ef4444' }, // Red

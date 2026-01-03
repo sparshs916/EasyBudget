@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSidebar } from '../context/SidebarContext';
+import { useUser } from '@auth0/nextjs-auth0';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
@@ -11,10 +12,10 @@ const navItems = [
   { name: 'Goals', path: '/goals', icon: 'track_changes' },
   { name: 'Connect', path: '/connect', icon: 'link' },
 ];
-
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { isOpen } = useSidebar();
+  const { user, isLoading } = useUser();
 
   return (
     <aside className={`
@@ -78,7 +79,9 @@ const Sidebar: React.FC = () => {
               <span className="material-symbols-outlined">person</span>
             </div>
             <div>
-              <p className="text-sm font-bold text-slate-700">User</p>
+              <p className="text-sm font-bold text-slate-700">
+                {isLoading ? 'Loading...' : user?.name ?? 'Not signed in'}
+              </p>
               <p className="text-xs text-slate-500">Pro Member</p>
             </div>
           </div>

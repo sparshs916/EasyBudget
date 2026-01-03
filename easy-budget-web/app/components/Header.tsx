@@ -35,7 +35,8 @@ const Header: React.FC = () => {
           <span className="material-symbols-outlined">notifications</span>
           <span className="hidden sm:inline text-sm font-medium">Alerts</span>
         </button>
-        <button className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors shadow-sm shadow-green-200">
+        <button  onClick={() => window.location.href = '/auth/logout'} 
+        className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors shadow-sm shadow-green-200">
           <span className="material-symbols-outlined text-[20px]">logout</span>
           <span className="hidden sm:inline text-sm font-bold">Logout</span>
         </button>

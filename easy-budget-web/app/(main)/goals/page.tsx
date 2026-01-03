@@ -1,7 +1,7 @@
 import React from 'react';
-import GoalCard from '../goals/components/GoalCard';
-import ContributionHistory from '../goals/components/ContributionHistory';
-import { Goal } from '../types';
+import GoalCard from './components/GoalCard';
+import ContributionHistory from './components/ContributionHistory';
+import { Goal } from '../../types';
 
 const activeGoals: Goal[] = [
   { id: '1', title: 'House Downpayment', targetDate: 'Dec 2025', currentAmount: 45000, targetAmount: 100000, icon: 'home', colorClass: 'bg-orange-50 text-orange-500' },
